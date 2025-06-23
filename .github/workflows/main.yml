@@ -30,7 +30,7 @@ jobs:
           file: Docker/Dockerfile
           load: true
           tags: ci-test:latest
-          #cache-from: type=registry,ref=ghcr.io/${{github.repository_owner}}/${{github.event.repository.name}},mode=max
+          cache-from: type=registry,ref=ghcr.io/${{github.repository_owner}}/${{github.action_repository}},mode=max
 
       - name: Run container
         run: |
