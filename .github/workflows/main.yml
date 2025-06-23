@@ -2,9 +2,9 @@ name: Build & Run Dockerfile
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build-and-run:
@@ -24,12 +24,14 @@ jobs:
 
       - name: Build Docker image
         uses: docker/build-push-action@v6
+
         with:
-          context: Docker   
-          file: Docker/Dockerfile 
-          load: true       
-          tags: ci-test:latest  
-          
+          context: Docker
+          file: Docker/Dockerfile
+          load: true
+          tags: ci-test:latest
+          #cache-from: type=registry,ref=ghcr.io/${{github.repository_owner}}/${{github.event.repository.name}},mode=max
+
       - name: Run container
         run: |
           docker run --rm ci-test:latest
