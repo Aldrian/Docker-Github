@@ -9,6 +9,8 @@ on:
 jobs:
   build-and-run:
     runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: ghcr.io/aldrian/docker-github
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,27 +36,26 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          load: true
-          tags: ci-test:latest
-          cache-from: type=gha,ref=${{github.ref}}
-          cache-to: type=gha,ref=${{github.ref}},mode=max
-          github-token: ${{ secrets.GHRC_TOKEN }}
+          push: true
+          tags: |
+            ${{ env.IMAGE_NAME }}:latest
+            ${{ env.IMAGE_NAME }}:${{ github.sha }}
+          cache-from: |
+            type=gha,ref=${{ env.IMAGE_NAME }}-cache
+          cache-to: |
+            type=gha,mode=max,ref=${{ env.IMAGE_NAME }}-cache
 
-      - name: Run container
-        run: |
-          docker run --rm ci-test:latest
+      # - name: Inspect image size
+      #   id: inspect
+      #   run: |
+      #     SIZE=$(docker image inspect ${{ env.IMAGE_NAME }}:latest --format='{{.Size}}')
+      #     echo "image_size_bytes=$SIZE" >> $GITHUB_OUTPUT
 
-      - name: Inspect image size
-        id: inspect
-        run: |
-          SIZE=$(docker image inspect ${{ env.IMAGE_NAME }}:latest --format='{{.Size}}')
-          echo "image_size_bytes=$SIZE" >> $GITHUB_OUTPUT
-
-      - name: Log image size
-        run: echo "Docker image size = ${{ steps.inspect.outputs.image_size_bytes }} bytes"
+      # - name: Log image size
+      #   run: echo "Docker image size = ${{ steps.inspect.outputs.image_size_bytes }} bytes"
 
       - name: Scan image for vulnerabilities (Trivy)
-        uses: aquasecurity/trivy-action@v0.28.0
+        uses: aquasecurity/trivy-action@0.31.0
         with:
           scan-type: image
           image-ref: ${{ env.IMAGE_NAME }}:latest
@@ -71,4 +72,9 @@ jobs:
     needs: build-and-run
     steps:
       - name: Analyze workflow performance
-        uses: actions-ecosystem/action-analyzer@v1
+        uses: somaz94/github-action-analyzer@v1
+        with:
+          github_token: ${{ secrets.GHRC_TOKEN }}
+          workflow_file: main.yml
+          repository: ${{ github.repository }}
+          debug: true # Enable debug mode for detailed loggin
